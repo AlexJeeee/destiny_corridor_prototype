@@ -1,0 +1,161 @@
+sequenceDiagram
+    participant GM as GameManager
+    participant EB as EventBus
+    participant CS as CardSystem
+    participant BS as BattleSystem
+    participant HGS as HexGridSystem
+    participant OS as OracleSystem
+    participant MCS as MemoryCorridorSystem
+    participant NS as NarrativeSystem
+    participant MS as ModSystem
+    participant SS as SeasonSystem
+    participant GS as GameState
+    
+    %% Game Initialization
+    Note over GM: Game Initialization
+    GM->>EB: Create event bus
+    GM->>GS: Create initial game state
+    GM->>CS: Initialize(gameState)
+    GM->>BS: Initialize(gameState)
+    GM->>HGS: Initialize(gameState)
+    GM->>OS: Initialize(gameState)
+    GM->>MCS: Initialize(gameState)
+    GM->>NS: Initialize(gameState)
+    GM->>MS: Initialize(gameState)
+    GM->>SS: Initialize(gameState)
+    
+    %% Starting New Run
+    Note over GM: Starting New Run
+    GM->>GS: startNewRun(characterId, difficulty)
+    GS->>GS: Reset game state
+    GS->>GS: Create player with selected character
+    GS->>MCS: Load inherited cards if any
+    MCS->>GS: Add inherited cards to player deck
+    GS->>OS: Generate initial oracle events
+    OS->>GS: Return oracle choices
+    GM->>HGS: createBattleMap(width, height, config)
+    HGS->>GS: Set currentMap
+    
+    %% Oracle Event Selection
+    Note over GM: Oracle Event Selection
+    GM->>OS: selectOracleEvent(event, gameState)
+    OS->>GS: Apply blessing effects
+    OS->>GS: Modify card pool
+    OS->>EB: Emit "oracle:selected" event
+    
+    %% Battle Sequence
+    Note over GM: Battle Sequence
+    GM->>BS: startBattle(player, enemies, map)
+    BS->>BS: calculateInitiative(characters)
+    BS->>GS: Set phase to "battle"
+    BS->>EB: Emit "battle:started" event
+    
+    loop Until battle ends
+        BS->>BS: processTurn()
+        alt Current turn is player
+            BS->>GS: Wait for player card selection
+            GS->>CS: playCard(card, player, targets, gameState)
+            CS->>CS: Check card state (normal/reversed)
+            CS->>CS: Calculate movement bonus
+            CS->>CS: Apply card effect
+            CS->>EB: Emit "card:played" event
+            
+            alt Card played causes terrain interaction
+                EB->>CS: Trigger "terrain:changed" event
+                CS->>CS: checkCardFlip(card, terrain)
+                alt Should flip card
+                    CS->>CS: flipCard(card)
+                    CS->>EB: Emit "card:flipped" event
+                end
+            end
+            
+            BS->>HGS: Check for movement options
+            alt Player moves
+                HGS->>HGS: moveCharacter(character, path, gameState)
+                HGS->>EB: Emit "character:moved" event
+                EB->>CS: Update movement bonuses
+            end
+        else Current turn is enemy
+            BS->>BS: processAITurn(character, gameState)
+            BS->>CS: AI selects and plays card
+            BS->>HGS: AI makes movement
+        end
+        
+        BS->>BS: checkBattleEnd()
+        alt Battle ended
+            BS->>EB: Emit "battle:ended" event
+            BS->>GS: Set phase to "exploration"
+            alt Player won
+                BS->>GS: Calculate rewards
+                BS->>MCS: Check for memory inheritance
+                BS->>NS: Trigger post-battle narrative event
+            else Player lost
+                BS->>MCS: Calculate inherited cards
+                MCS->>GS: Convert top cards to inherited cards
+                BS->>GS: End game run
+            end
+        end
+    end
+    
+    %% Floor Progression
+    Note over GM: Floor Progression
+    GM->>GS: Complete current floor
+    GS->>GS: Increment currentFloor
+    GS->>EB: Emit "floor:completed" event
+    EB->>OS: Trigger oracle event generation
+    OS->>GM: Present new oracle choices
+    GM->>HGS: Generate new battle map
+    HGS->>GS: Set new currentMap
+    GM->>NS: Trigger floor transition narrative
+    
+    %% Card Flip Mechanism
+    Note over GM: Card Flip Mechanism (Detail)
+    CS->>HGS: Check cell terrain under character
+    HGS->>CS: Return terrain type
+    CS->>CS: shouldCardFlip(card.attribute, terrain)
+    alt Should flip card
+        CS->>CS: Change card.state
+        CS->>EB: Emit "card:flipped" event
+    end
+    
+    %% Mod Loading
+    Note over GM: Mod Loading
+    GM->>MS: loadMod(modId)
+    MS->>MS: Fetch mod data
+    MS->>MS: validateMod(mod)
+    alt Mod is valid
+        MS->>MS: handleModDependencies(mod)
+        MS->>CS: Register mod cards
+        MS->>NS: Register mod story content
+        MS->>GS: Update available content
+        MS->>EB: Emit "mod:loaded" event
+    else Mod is invalid
+        MS->>EB: Emit "mod:load_failed" event
+    end
+    
+    %% Season Update
+    Note over GM: Season Update
+    SS->>SS: Check for season change
+    alt New season started
+        SS->>SS: Load new season data
+        SS->>SS: updateBannedCombinations()
+        SS->>GS: Update season-specific content
+        SS->>CS: Update card pool with seasonal changes
+        SS->>EB: Emit "season:changed" event
+    end
+    
+    %% Memory Corridor Inheritance
+    Note over GM: Memory Corridor Inheritance
+    MCS->>MCS: analyzeTopCards(cards, 3)
+    MCS->>MCS: convertToInheritedCard(card) for each top card
+    MCS->>GS: Update progress.inheritedCards
+    MCS->>GS: saveProgress()
+    
+    %% Creative Workshop Card Creation
+    Note over GM: Creative Workshop Card Creation
+    GM->>MS: createMod(modData)
+    MS->>MS: Create new mod container
+    MS->>CS: Register custom cards
+    MS->>MS: validateMod(newMod)
+    MS->>GS: Add to installed mods
+    MS->>EB: Emit "mod:created" event

@@ -1,0 +1,268 @@
+classDiagram
+    class GameManager {
+        -gameState: GameState
+        -systems: System[]
+        -eventBus: EventBus
+        +initialize()
+        +update(deltaTime: number)
+        +startNewGame(characterId: string, difficulty: number)
+        +loadGame(saveId: string): Promise~boolean~
+        -createInitialState(): GameState
+    }
+
+    class EventBus {
+        -listeners: Map~string, Function[]~
+        +on(event: string, callback: Function)
+        +emit(event: string, data?: any)
+        +removeListener(event: string, callback: Function)
+    }
+
+    class System {
+        <<abstract>>
+        #eventBus: EventBus
+        +initialize(gameState: GameState)*
+        +update(gameState: GameState, deltaTime: number)*
+    }
+
+    class CardSystem {
+        -cardDatabase: Map~string, Card~
+        -effectProcessors: Map~string, Function~
+        +playCard(card: Card, source: Character, targets: GameEntity[], gameState: GameState)
+        +checkCardFlip(card: Card, terrain: TerrainType): boolean
+        +flipCard(card: Card)
+        -calculateMovementBonus(card: Card, baseValue: number, character: Character): number
+        -applyCardEffect(effect: CardEffect, value: number, source: Character, targets: GameEntity[], gameState: GameState)
+        -loadCardDatabase()
+        -registerEffectProcessors()
+        -shouldCardFlip(attribute: Attribute, terrain: TerrainType): boolean
+        -checkConditions(conditions: EffectCondition[], source: Character, targets: GameEntity[], gameState: GameState): boolean
+    }
+
+    class BattleSystem {
+        -battleQueue: Character[]
+        -currentTurn: number
+        +startBattle(player: Character, enemies: Character[], map: BattleMap)
+        +processTurn()
+        +endBattle(victory: boolean)
+        -calculateInitiative(characters: Character[]): Character[]
+        -processAITurn(character: Character, gameState: GameState)
+        -checkBattleEnd(): boolean
+    }
+
+    class HexGridSystem {
+        +createBattleMap(width: number, height: number, terrainConfig?: any): BattleMap
+        +getPath(map: BattleMap, start: Position, end: Position): HexCell[]
+        +getNeighbors(map: BattleMap, cell: HexCell): HexCell[]
+        +applyTerrainEffect(cell: HexCell, character: Character)
+        +moveCharacter(character: Character, path: HexCell[], gameState: GameState)
+        -generateTerrain(map: BattleMap, config: any)
+        -calculateDistance(a: Position, b: Position): number
+    }
+
+    class OracleSystem {
+        -oracleEvents: OracleEvent[]
+        -deities: Map~string, DeityData~
+        +generateOracleChoices(gameState: GameState, count?: number): OracleEvent[]
+        +selectOracleEvent(event: OracleEvent, gameState: GameState)
+        +spendDestinyCoins(amount: number, purpose: string, gameState: GameState): boolean
+        -loadOracleEvents()
+        -loadDeities()
+        -getAvailableEvents(gameState: GameState): OracleEvent[]
+        -applyCardPoolModifiers(modifiers: Record~CardType, number~, gameState: GameState)
+    }
+
+    class MemoryCorridorSystem {
+        +saveRunProgress(gameState: GameState)
+        +analyzeTopCards(cards: Card[], count?: number): Card[]
+        +inheritCards(cards: Card[], gameState: GameState)
+        +checkSpecialConditions(gameState: GameState): string[]
+        -convertToInheritedCard(card: Card): Card
+        -processUnlockCondition(condition: string, gameState: GameState): boolean
+    }
+
+    class NarrativeSystem {
+        -storyNodes: Map~string, StoryNode~
+        -eventChains: EventChain[]
+        +triggerEvent(condition: string, context?: any): StoryEvent | null
+        +makeChoice(choiceId: string, context?: any)
+        +updateFactionRelation(faction: string, change: number)
+        +checkEventChainProgress(gameState: GameState)
+        -loadStoryContent()
+        -selectRandomOutcome(outcomes: StoryOutcome[]): StoryOutcome
+    }
+
+    class ModSystem {
+        -installedMods: Mod[]
+        -enabledMods: string[]
+        +loadMod(modId: string): Promise~boolean~
+        +enableMod(modId: string): boolean
+        +disableMod(modId: string): boolean
+        +createMod(modData: Partial~Mod~): Promise~string~
+        +validateMod(mod: Mod): boolean
+        -integrateModContent(mod: Mod, gameState: GameState)
+        -handleModDependencies(mod: Mod): boolean
+    }
+
+    class SeasonSystem {
+        -currentSeason: Season
+        -leaderboard: LeaderboardEntry[]
+        -bannedCombinations: CardCombination[]
+        +getCurrentLeaderboard(): Promise~LeaderboardEntry[]~
+        +submitResult(result: GameResult): Promise~void~
+        +getSeasonalRewards(rank: number): Reward[]
+        +updateBannedCombinations()
+        -analyzeCardUsage(results: GameResult[]): CardCombination[]
+        -calculatePlayerRating(player: string, results: GameResult[]): number
+    }
+
+    class GameState {
+        +player: Character
+        +currentMap?: BattleMap
+        +currentEnemies: Character[]
+        +currentFloor: number
+        +totalFloors: number
+        +difficultyLevel: number
+        +randomSeed: string
+        +turnNumber: number
+        +phase: string
+        +destinyCoins: DestinyCoins
+        +activeOracles: OracleEvent[]
+        +narrative: NarrativeSystem
+        +progress: ProgressSystem
+        +modSystem: ModSystem
+        +seasonSystem?: SeasonSystem
+        +settings: GameSettings
+        +saveGame(): Promise~boolean~
+        +loadGame(saveId: string): Promise~boolean~
+        +startNewRun(characterId: string, difficulty: number)
+    }
+
+    class Card {
+        +id: string
+        +name: string
+        +description: string
+        +type: CardType
+        +attribute: Attribute
+        +state: CardState
+        +energyCost: number
+        +normalEffect: CardEffect
+        +reversedEffect: CardEffect
+        +movementBonusType?: string
+        +movementBonusValue?: number
+        +movementThreshold?: number
+        +artwork: string
+        +rarity: number
+        +unlockCondition?: string
+        +isUserCreated: boolean
+        +creatorId?: string
+    }
+
+    class Character {
+        +id: string
+        +name: string
+        +position: Position
+        +attributes: Map~string, any~
+        +maxHealth: number
+        +currentHealth: number
+        +energy: number
+        +maxEnergy: number
+        +deck: Card[]
+        +hand: Card[]
+        +discardPile: Card[]
+        +effects: StatusEffect[]
+        +inventory: Item[]
+        +experience: number
+        +level: number
+        +abilities: Ability[]
+    }
+
+    class BattleMap {
+        +cells: HexCell[][]
+        +width: number
+        +height: number
+        +getCell(x: number, y: number): HexCell
+        +getNeighbors(cell: HexCell): HexCell[]
+        +getPath(start: HexCell, end: HexCell): HexCell[]
+        +applyEffectToArea(center: Position, radius: number, effect: StatusEffect)
+    }
+
+    class HexCell {
+        +position: Position
+        +terrainType: TerrainType
+        +effects: StatusEffect[]
+        +occupiedBy?: GameEntity
+        +movementCost: number
+        +visualState: string
+    }
+
+    class OracleEvent {
+        +id: string
+        +name: string
+        +description: string
+        +deity: string
+        +blessings: Blessing[]
+        +cardPoolModifiers: Record~CardType, number~
+        +specialRules?: string[]
+    }
+
+    class ProgressSystem {
+        +unlockedCards: string[]
+        +unlockedCharacters: string[]
+        +completedAchievements: string[]
+        +statistics: GameStatistics
+        +inheritedCards: Card[]
+        +saveProgress(): Promise~boolean~
+        +loadProgress(): Promise~boolean~
+        +updateStatistics(stats: Partial~GameStatistics~)
+        +inheritCard(card: Card)
+    }
+
+    class Mod {
+        +id: string
+        +name: string
+        +author: string
+        +version: string
+        +description: string
+        +cards?: Card[]
+        +events?: StoryEvent[]
+        +characters?: Character[]
+        +items?: Item[]
+        +scripts?: string[]
+        +dependencies?: string[]
+        +compatibility?: string
+        +rating?: number
+        +downloads?: number
+    }
+
+    class Season {
+        +id: string
+        +name: string
+        +theme: string
+        +startDate: Date
+        +endDate: Date
+        +specialRules: string[]
+        +exclusiveContent: string[]
+    }
+
+    GameManager *-- GameState: manages
+    GameManager *-- EventBus: uses
+    GameManager o-- System: contains
+    System <|-- CardSystem: extends
+    System <|-- BattleSystem: extends
+    System <|-- HexGridSystem: extends
+    System <|-- OracleSystem: extends
+    System <|-- MemoryCorridorSystem: extends
+    System <|-- NarrativeSystem: extends
+    System <|-- ModSystem: extends
+    System <|-- SeasonSystem: extends
+    CardSystem -- Card: manages
+    BattleSystem -- Character: manages in battle
+    HexGridSystem -- BattleMap: manages
+    BattleMap *-- HexCell: contains
+    OracleSystem -- OracleEvent: manages
+    GameState -- Character: contains player
+    GameState -- BattleMap: contains current map
+    GameState -- ProgressSystem: contains progress
+    GameState -- ModSystem: contains mod manager
+    ModSystem -- Mod: manages
+    SeasonSystem -- Season: manages current

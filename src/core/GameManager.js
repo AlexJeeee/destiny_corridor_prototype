@@ -8,7 +8,7 @@ class GameManager {
     this.eventBus = new EventBus();
     this.state = {
       player: {
-        position: { x: 0, y: 0 },
+        position: { x: 2, y: 2 },
         health: 100,
         maxHealth: 100,
         energy: 3,
@@ -23,7 +23,7 @@ class GameManager {
       },
       enemies: [
         {
-          id: 'enemy-1-' + Math.random().toString(36).substr(2, 9),
+          id: 'enemy-1',
           position: { x: 4, y: 2 },
           health: 30,
           maxHealth: 30,
@@ -46,6 +46,11 @@ class GameManager {
     
     // 初始化牌组
     this.initializeDeck();
+    
+    // 确保敌人位置正确
+    this.validateEnemyPositions();
+    
+    console.log('GameManager初始化完成，初始状态:', JSON.stringify(this.state, null, 2));
   }
 
   // 初始化战场地形
@@ -272,26 +277,77 @@ class GameManager {
   }
 
   // 触发游戏事件
-  triggerGameEvent(eventData) {
-    // 添加唯一事件ID
+  triggerGameEvent(event) {
+    if (!event || !event.type) {
+      console.error('无效的事件对象:', event);
+      return;
+    }
+    
+    console.log('触发游戏事件:', event);
+    
+    // 添加事件ID，避免重复处理
     const eventWithId = {
-      ...eventData,
-      id: `${eventData.type}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      ...event,
+      id: event.id || `${event.type}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
     };
     
-    const event = new CustomEvent('game_event', { detail: eventWithId });
-    window.dispatchEvent(event);
-    console.log('触发游戏事件:', eventWithId);
+    // 使用事件总线分发事件
+    if (this.eventBus) {
+      console.log('通过事件总线分发事件:', eventWithId);
+      this.eventBus.emit('gameEvent', eventWithId);
+    } else {
+      console.error('事件总线未初始化');
+    }
+    
+    // 兼容旧的事件处理方式
+    const customEvent = new CustomEvent('game_event', { detail: eventWithId });
+    window.dispatchEvent(customEvent);
+    
+    // 根据事件类型执行特定操作
+    switch (event.type) {
+      case 'all_enemies_defeated':
+        console.log('所有敌人被击败，游戏胜利');
+        // 标记战斗已结束
+        this.setState({
+          ...this.state,
+          battleEnded: true
+        });
+        break;
+        
+      case 'player_defeated':
+        console.log('玩家被击败，游戏失败');
+        // 标记战斗已结束
+        this.setState({
+          ...this.state,
+          battleEnded: true
+        });
+        break;
+        
+      default:
+        // 其他事件类型不需要特殊处理
+        break;
+    }
   }
 
   // 移动角色
   moveCharacter(character, newPosition) {
-    if (!character || !newPosition) return false;
+    if (!character || !newPosition) {
+      console.error('无效的角色或位置');
+      return false;
+    }
+    
+    console.log('移动角色:', JSON.stringify(character, null, 2));
+    console.log('目标位置:', JSON.stringify(newPosition, null, 2));
     
     // 检查目标位置是否被占用
     const isOccupied = this.state.enemies.some(enemy => 
-      enemy.position.x === newPosition.x && enemy.position.y === newPosition.y
+      enemy !== character && // 不要将自己视为占用
+      enemy.position && 
+      enemy.position.x === newPosition.x && 
+      enemy.position.y === newPosition.y
     ) || (
+      this.state.player !== character && // 不要将自己视为占用
+      this.state.player.position &&
       this.state.player.position.x === newPosition.x && 
       this.state.player.position.y === newPosition.y
     );
@@ -302,7 +358,7 @@ class GameManager {
     }
     
     // 记录旧位置
-    const oldPosition = { ...character.position };
+    const oldPosition = character.position ? { ...character.position } : null;
     
     // 更新角色位置
     if (character === this.state.player) {
@@ -327,20 +383,32 @@ class GameManager {
       // 应用地形效果
       this.applyTerrainEffect(this.state.player, 'onEnter');
     } else {
-      // 更新敌人位置
+      // 敌人移动
+      console.log('处理敌人移动');
+      
+      // 检查是否是敌人
+      const isEnemy = this.state.enemies.some(e => e.id === character.id);
+      if (!isEnemy) {
+        console.error('移动的角色不是敌人:', character);
+        return false;
+      }
+      
+      // 直接创建新的敌人数组
       const updatedEnemies = this.state.enemies.map(enemy => {
-        // 使用ID或位置来识别敌人
-        if (enemy.id === character.id || 
-            (enemy.position.x === character.position.x && 
-             enemy.position.y === character.position.y)) {
+        if (enemy.id === character.id) {
+          console.log(`找到要移动的敌人 ${enemy.id}`);
           return {
             ...enemy,
-            position: newPosition
+            position: { ...newPosition }
           };
         }
         return enemy;
       });
       
+      console.log('更新前的敌人:', JSON.stringify(this.state.enemies, null, 2));
+      console.log('更新后的敌人:', JSON.stringify(updatedEnemies, null, 2));
+      
+      // 更新状态
       this.setState({ enemies: updatedEnemies });
       
       // 触发移动事件
@@ -353,7 +421,7 @@ class GameManager {
       // 应用地形效果
       setTimeout(() => {
         const updatedEnemy = this.state.enemies.find(e => 
-          e.position.x === newPosition.x && e.position.y === newPosition.y
+          e.id === character.id
         );
         if (updatedEnemy) {
           this.applyTerrainEffect(updatedEnemy, 'onEnter');
@@ -426,6 +494,8 @@ class GameManager {
       // 对玩家造成伤害
       const newHealth = Math.max(0, this.state.player.health - actualDamage);
       
+      console.log(`玩家受到${actualDamage}点伤害，生命值从 ${this.state.player.health} 减少到 ${newHealth}`);
+      
       this.setState({
         player: {
           ...this.state.player,
@@ -433,13 +503,28 @@ class GameManager {
         }
       });
       
-      console.log(`玩家受到${actualDamage}点伤害，剩余生命值: ${newHealth}`);
+      // 触发伤害事件
+      this.triggerGameEvent({
+        type: 'player_damaged',
+        damage: actualDamage,
+        newHealth: newHealth
+      });
     } else {
       // 对敌人造成伤害
+      let enemyDied = false;
+      let deadEnemy = null;
+      
       const updatedEnemies = this.state.enemies.map(enemy => {
         if (enemy === character) {
           const newHealth = Math.max(0, enemy.health - actualDamage);
           console.log(`敌人受到${actualDamage}点伤害，剩余生命值: ${newHealth}`);
+          
+          // 检查敌人是否死亡
+          if (newHealth <= 0 && enemy.health > 0) {
+            enemyDied = true;
+            deadEnemy = { ...enemy };
+            console.log(`敌人 ${enemy.id} 死亡`);
+          }
           
           return {
             ...enemy,
@@ -449,13 +534,33 @@ class GameManager {
         return enemy;
       });
       
-      // 检查敌人是否死亡
-      const deadEnemies = updatedEnemies.filter(enemy => enemy.health <= 0);
-      if (deadEnemies.length > 0) {
-        console.log(`${deadEnemies.length}个敌人死亡`);
-      }
-      
+      // 更新敌人状态
       this.setState({ enemies: updatedEnemies });
+      
+      // 如果敌人死亡，触发死亡事件
+      if (enemyDied && deadEnemy) {
+        // 延迟一下，确保状态更新后再触发事件
+        setTimeout(() => {
+          // 触发敌人死亡事件
+          this.triggerGameEvent({
+            type: 'enemy_defeated',
+            count: 1,
+            enemy: deadEnemy
+          });
+          
+          // 移除死亡的敌人
+          const aliveEnemies = this.state.enemies.filter(enemy => enemy && enemy.health > 0);
+          this.setState({ enemies: aliveEnemies });
+          
+          // 检查是否所有敌人都已死亡
+          if (aliveEnemies.length === 0) {
+            console.log('所有敌人都已被击败');
+            this.triggerGameEvent({
+              type: 'all_enemies_defeated'
+            });
+          }
+        }, 100);
+      }
     }
   }
 
@@ -694,6 +799,8 @@ class GameManager {
 
   // 结束回合
   endTurn() {
+    console.log('结束回合，当前回合:', this.state.currentTurn);
+    
     if (this.state.currentTurn === 'player') {
       // 结束玩家回合
       const updatedPlayer = {
@@ -701,22 +808,36 @@ class GameManager {
         hand: [] // 清空手牌
       };
 
+      // 先触发回合结束事件
+      this.triggerGameEvent({
+        type: 'turn_end',
+        turn: 'player'
+      });
+
+      // 更新状态为敌人回合
       this.setState({
         currentTurn: 'enemy',
         player: updatedPlayer
       });
       
+      // 触发敌人回合开始事件
+      this.triggerGameEvent({
+        type: 'turn_start',
+        turn: 'enemy'
+      });
+      
       // 确保状态更新后再执行敌人回合
+      console.log('准备执行敌人回合...');
       setTimeout(() => {
         console.log('执行敌人回合...');
         this.performEnemyTurn();
-      }, 100);
+      }, 500);
     }
   }
 
   // 执行敌人回合
   performEnemyTurn() {
-    console.log('执行敌人回合');
+    console.log('执行敌人回合 - 简化版');
     
     // 检查游戏状态
     if (!this.state || !this.state.enemies || !this.state.player) {
@@ -724,27 +845,56 @@ class GameManager {
       return;
     }
     
+    // 先移除已死亡的敌人
+    const aliveEnemies = this.state.enemies.filter(enemy => enemy && enemy.health > 0);
+    
+    // 如果有敌人死亡，更新状态并触发事件
+    if (aliveEnemies.length < this.state.enemies.length) {
+      const deadCount = this.state.enemies.length - aliveEnemies.length;
+      console.log(`${deadCount}个敌人被击败`);
+      
+      // 触发敌人死亡事件
+      this.triggerGameEvent({
+        type: 'enemy_defeated',
+        count: deadCount
+      });
+      
+      // 更新敌人状态
+      this.setState({ enemies: aliveEnemies });
+      
+      // 如果没有敌人了，直接结束回合
+      if (aliveEnemies.length === 0) {
+        console.log('没有敌人，直接结束回合');
+        this.endEnemyTurn();
+        return;
+      }
+    }
+    
     // 获取所有敌人
-    const enemies = [...this.state.enemies];
+    const enemies = [...aliveEnemies];
     console.log(`敌人数量: ${enemies.length}`);
     
-    let playerDamaged = false;
+    if (enemies.length === 0) {
+      console.log('没有敌人，直接结束回合');
+      this.endEnemyTurn();
+      return;
+    }
     
-    // 对每个敌人执行AI
-    for (const enemy of enemies) {
+    // 简化版：直接更新敌人位置，不使用复杂的递归和setTimeout
+    const updatedEnemies = enemies.map(enemy => {
       // 如果敌人已经死亡，跳过
       if (!enemy || enemy.health <= 0) {
-        console.log('敌人已死亡，跳过');
-        continue;
+        return enemy;
       }
       
       // 检查敌人位置
       if (!enemy.position || typeof enemy.position.x !== 'number' || typeof enemy.position.y !== 'number') {
-        console.error('敌人位置无效:', enemy.position);
-        continue;
+        console.error('敌人位置无效:', enemy);
+        return enemy;
       }
       
       console.log(`处理敌人 ${enemy.id} 在位置 (${enemy.position.x}, ${enemy.position.y})`);
+      console.log(`玩家位置: (${this.state.player.position.x}, ${this.state.player.position.y})`);
       
       // 计算与玩家的距离
       const distanceToPlayer = hexDistance(
@@ -754,17 +904,21 @@ class GameManager {
       
       console.log(`敌人距离玩家: ${distanceToPlayer}`);
       
+      // 创建敌人的副本
+      const updatedEnemy = { ...enemy };
+      
       if (distanceToPlayer <= 1) {
         // 敌人攻击玩家
         const damage = 5; // 基础伤害
         console.log(`敌人攻击玩家，造成${damage}点伤害`);
         
+        // 应用伤害
         this.applyDamage(this.state.player, damage);
-        playerDamaged = true;
         
         // 触发攻击事件
         this.triggerGameEvent({
           type: 'enemy_attack',
+          enemy: updatedEnemy,
           damage,
           position: enemy.position
         });
@@ -773,11 +927,15 @@ class GameManager {
         const dx = this.state.player.position.x - enemy.position.x;
         const dy = this.state.player.position.y - enemy.position.y;
         
+        console.log(`方向计算: dx=${dx}, dy=${dy}`);
+        
         // 计算移动方向
         const moveX = dx !== 0 ? (dx > 0 ? 1 : -1) : 0;
         const moveY = dy !== 0 ? (dy > 0 ? 1 : -1) : 0;
         
-        // 移动敌人
+        console.log(`移动方向: moveX=${moveX}, moveY=${moveY}`);
+        
+        // 计算新位置
         const newPosition = {
           x: enemy.position.x + moveX,
           y: enemy.position.y + moveY
@@ -785,60 +943,80 @@ class GameManager {
         
         console.log(`敌人尝试移动到 (${newPosition.x}, ${newPosition.y})`);
         
-        // 尝试移动
-        const moveResult = this.moveCharacter(enemy, newPosition);
-        console.log(`移动结果: ${moveResult ? '成功' : '失败'}`);
+        // 检查目标位置是否已被占用
+        const isOccupied = enemies.some(e => 
+          e !== enemy && e.position && e.position.x === newPosition.x && e.position.y === newPosition.y
+        ) || (
+          this.state.player.position.x === newPosition.x && 
+          this.state.player.position.y === newPosition.y
+        );
+        
+        if (!isOccupied) {
+          // 保存旧位置
+          const oldPosition = { ...enemy.position };
+          
+          // 直接更新敌人位置
+          updatedEnemy.position = { ...newPosition };
+          console.log(`敌人位置已更新为 (${newPosition.x}, ${newPosition.y})`);
+          
+          // 触发移动事件
+          this.triggerGameEvent({
+            type: 'enemy_move',
+            enemy: updatedEnemy,
+            position: newPosition,
+            oldPosition: oldPosition,
+            from: oldPosition,
+            to: newPosition
+          });
+        } else {
+          console.log('目标位置已被占用，无法移动');
+        }
       }
-    }
-    
-    // 移除已死亡的敌人
-    const aliveEnemies = enemies.filter(enemy => enemy && enemy.health > 0);
-    
-    // 如果有敌人死亡，更新状态
-    if (aliveEnemies.length < enemies.length) {
-      console.log(`${enemies.length - aliveEnemies.length}个敌人被击败`);
-      this.triggerGameEvent({
-        type: 'enemy_defeated',
-        count: enemies.length - aliveEnemies.length
-      });
-    }
+      
+      return updatedEnemy;
+    });
     
     // 更新敌人状态
-    this.setState({ enemies: aliveEnemies });
+    this.setState({ enemies: updatedEnemies });
     
-    // 如果玩家受到伤害，显示消息
-    if (playerDamaged) {
-      console.log('玩家受到了伤害');
+    // 延迟后结束敌人回合
+    setTimeout(() => {
+      this.endEnemyTurn();
+    }, 1000);
+  }
+  
+  // 结束敌人回合
+  endEnemyTurn() {
+    console.log('结束敌人回合');
+    
+    // 检查玩家是否死亡
+    if (this.state.player.health <= 0) {
+      console.log('玩家死亡，游戏结束');
+      this.triggerGameEvent({
+        type: 'player_defeated'
+      });
+      return;
     }
     
-    // 延迟后回到玩家回合
-    setTimeout(() => {
-      // 检查玩家是否死亡
-      if (this.state.player.health <= 0) {
-        console.log('玩家死亡，游戏结束');
-        this.triggerGameEvent({
-          type: 'player_defeated'
-        });
-        return;
-      }
-      
-      console.log('敌人回合结束，回到玩家回合');
-      
-      this.setState({
-        currentTurn: 'player',
-        turnCount: this.state.turnCount + 1,
-        player: {
-          ...this.state.player,
-          energy: this.state.player.maxEnergy
-        }
-      });
-      
-      // 抽新的手牌
-      this.drawCards(this.state.player.maxHandSize);
-      
-      // 应用地形效果
-      this.applyTerrainEffect(this.state.player, 'onTurnStart');
-    }, 1000);
+    // 触发敌人回合结束事件
+    this.triggerGameEvent({
+      type: 'turn_end',
+      turn: 'enemy'
+    });
+    
+    // 更新状态为玩家回合
+    this.setState({
+      currentTurn: 'player'
+    });
+    
+    // 开始玩家回合
+    this.startTurn(this.state.player);
+    
+    // 触发玩家回合开始事件
+    this.triggerGameEvent({
+      type: 'turn_start',
+      turn: 'player'
+    });
   }
 
   // 治疗角色
@@ -865,6 +1043,40 @@ class GameManager {
       
       this.setState({ enemies: updatedEnemies });
     }
+  }
+
+  // 验证敌人位置
+  validateEnemyPositions() {
+    if (!this.state.enemies || this.state.enemies.length === 0) {
+      console.log('没有敌人需要验证');
+      return;
+    }
+    
+    // 检查敌人位置
+    const validatedEnemies = this.state.enemies.map((enemy, index) => {
+      if (!enemy.position) {
+        console.error(`敌人${index}没有位置信息，设置默认位置`);
+        return {
+          ...enemy,
+          position: { x: 4 + index, y: 2 }
+        };
+      }
+      
+      if (typeof enemy.position.x !== 'number' || typeof enemy.position.y !== 'number') {
+        console.error(`敌人${index}位置信息无效，设置默认位置`);
+        return {
+          ...enemy,
+          position: { x: 4 + index, y: 2 }
+        };
+      }
+      
+      return enemy;
+    });
+    
+    // 更新敌人位置
+    this.state.enemies = validatedEnemies;
+    
+    console.log('敌人位置验证完成:', this.state.enemies);
   }
 }
 

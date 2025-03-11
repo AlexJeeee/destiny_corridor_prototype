@@ -16,12 +16,16 @@ export function hexDistance(a, b) {
   const q2 = b.q !== undefined ? b.q : b.x;
   const r2 = b.r !== undefined ? b.r : b.y;
   
-  // 使用轴向坐标计算距离
-  const dx = Math.abs(q1 - q2);
-  const dy = Math.abs(r1 - r2);
+  // 计算s坐标（六边形坐标系中的第三个轴）
+  const s1 = -q1 - r1;
+  const s2 = -q2 - r2;
   
-  // 简化的六边形距离计算
-  return Math.max(dx, dy, Math.abs(dx - dy));
+  // 使用三轴坐标计算距离
+  return Math.max(
+    Math.abs(q1 - q2),
+    Math.abs(r1 - r2),
+    Math.abs(s1 - s2)
+  );
 }
 
 /**

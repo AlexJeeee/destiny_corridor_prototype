@@ -1,5 +1,5 @@
 // src/components/HexCell.jsx
-import React from 'react';
+import React, { useEffect } from 'react';
 
 // 添加CSS样式
 const hexCellStyles = {
@@ -13,10 +13,17 @@ const hexCellStyles = {
   transition: 'all 0.2s ease',
 };
 
-const HexCell = ({ cell, onClick, inRange, isSelected, isTargetable, inPath, inFormation }) => {
+const HexCell = ({ cell, position, onClick, inRange, isSelected, isTargetable, inPath, inFormation }) => {
   // Get occupant stats if any
   const occupant = cell.occupant;
   const terrain = cell.terrain;
+
+  // 添加调试信息
+  useEffect(() => {
+    if (occupant && occupant.type === 'enemy') {
+      console.log(`HexCell渲染敌人在位置(${position.x}, ${position.y}):`, occupant);
+    }
+  }, [occupant, position]);
 
   // Helper function for terrain icons
   const getTerrainIcon = (terrain) => {
@@ -63,6 +70,9 @@ const HexCell = ({ cell, onClick, inRange, isSelected, isTargetable, inPath, inF
     }
   };
 
+  // 添加位置标记，方便调试
+  const positionLabel = position ? `(${position.x},${position.y})` : '';
+
   return (
     <div
       style={hexCellStyles}
@@ -76,9 +86,14 @@ const HexCell = ({ cell, onClick, inRange, isSelected, isTargetable, inPath, inF
         ${getTerrainStyle(terrain)}
         transition-all duration-200
       `}
-      onClick={() => onClick(cell)}
-      title={getTerrainDescription(terrain)}
+      onClick={() => onClick(position.x, position.y)}
+      title={`${getTerrainDescription(terrain)} - 位置${positionLabel}`}
     >
+      {/* 位置标记 */}
+      <div className="absolute top-0 right-0 text-xs text-white/50 p-1">
+        {positionLabel}
+      </div>
+
       {/* Terrain effect */}
       {terrain && (
         <div className="absolute top-1 left-1 text-lg opacity-75">

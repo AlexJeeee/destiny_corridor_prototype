@@ -7,21 +7,21 @@
 export const oracles = [
   // War God Oracles
   {
-    name: 'Oracle of Bloodlust',
-    description: 'The War God\'s blessing of aggression',
+    name: '血腥神谕',
+    description: '战神的神谕，增加攻击力',
     deity: 'wargod',
     minFloor: 1,
     maxFloor: 5,
     blessings: [
       {
-        name: 'Battle Fury',
-        description: 'Your attacks deal 15% more damage.',
+        name: '战斗狂怒',
+        description: '你的攻击增加15%伤害',
         effect: 'attackBoost',
         value: 15
       },
       {
-        name: 'Blood Rage',
-        description: 'When you take damage, gain 1 energy for every 5 damage taken.',
+        name: '血怒',
+        description: '当你受到伤害时，每5点伤害获得1点能量',
         effect: 'damageEnergyConversion',
         value: 5
       }
@@ -32,25 +32,25 @@ export const oracles = [
       utility: -10
     },
     specialRules: [
-      'Taking more than 10 damage in a single turn triggers Blood Frenzy, increasing your damage by 20% for 1 turn.'
+      '单次受到超过10点伤害时触发血怒，增加20%伤害，持续1回合'
     ]
   },
   {
-    name: 'Oracle of Iron',
-    description: 'The War God\'s blessing of defense',
+    name: '钢铁神谕',
+    description: '战神的神谕，增加防御力',
     deity: 'wargod',
     minFloor: 1,
     maxFloor: 5,
     blessings: [
       {
-        name: 'Iron Skin',
-        description: 'Gain 5 shield at the start of combat.',
+        name: '铁皮',
+        description: '战斗开始时获得5点护盾',
         effect: 'startShield',
         value: 5
       },
       {
-        name: 'Counterattack',
-        description: 'When you block damage, deal 2 damage to the attacker.',
+        name: '反击',
+        description: '当你阻挡伤害时，对攻击者造成2点伤害',
         effect: 'counterattack',
         value: 2
       }
@@ -64,21 +64,21 @@ export const oracles = [
 
   // Wisdom God Oracles
   {
-    name: 'Oracle of Knowledge',
-    description: 'The Wisdom God\'s blessing of insight',
+    name: '智慧神谕',
+    description: '智慧神谕，增加洞察力',
     deity: 'wisdomgod',
     minFloor: 1,
     maxFloor: 5,
     blessings: [
       {
-        name: 'Deep Insight',
-        description: 'Draw 1 additional card at the start of combat.',
+        name: '深邃洞察',
+        description: '战斗开始时抽取1张牌',
         effect: 'cardDraw',
         value: 1
       },
       {
-        name: 'Strategic Mind',
-        description: 'Every third card you play costs 1 less energy.',
+        name: '战略思维',
+        description: '每第三张牌消耗1点能量',
         effect: 'cardDiscount',
         value: 1
       }
@@ -90,21 +90,21 @@ export const oracles = [
     }
   },
   {
-    name: 'Oracle of Elements',
-    description: 'The Wisdom God\'s blessing of elemental power',
+    name: '元素神谕',
+    description: '元素神谕，增加元素伤害',
     deity: 'wisdomgod',
     minFloor: 1,
     maxFloor: 5,
     blessings: [
       {
-        name: 'Elemental Affinity',
-        description: 'Elemental cards deal 20% more damage.',
+        name: '元素亲和',
+        description: '元素牌增加20%伤害',
         effect: 'elementalBoost',
         value: 20
       },
       {
-        name: 'Mana Spring',
-        description: 'Start each turn with 1 additional energy.',
+        name: '能量喷泉',
+        description: '每回合开始时获得1点能量',
         effect: 'startingEnergy',
         value: 1
       }
@@ -118,21 +118,21 @@ export const oracles = [
 
   // Luck God Oracles
   {
-    name: 'Oracle of Fortune',
-    description: 'The Luck God\'s blessing of chance',
+    name: '幸运神谕',
+    description: '幸运神谕，增加幸运值',
     deity: 'luckgod',
     minFloor: 1,
     maxFloor: 5,
     blessings: [
       {
-        name: 'Lucky Strike',
-        description: '20% chance for attacks to deal double damage.',
+        name: '幸运打击',
+        description: '20%几率造成双倍伤害',
         effect: 'critChance',
         value: 20
       },
       {
-        name: 'Fortune\'s Favor',
-        description: 'Gain 1 Destiny Coin at the start of combat.',
+        name: '命运之轮',
+        description: '战斗开始时获得1个命运硬币',
         effect: 'destinyCoins',
         value: 1
       }
@@ -143,25 +143,25 @@ export const oracles = [
       utility: 10
     },
     specialRules: [
-      'Your Destiny Wheel has a higher chance for rare outcomes.'
+      '你的命运之轮有更高的几率出现稀有结果'
     ]
   },
   {
-    name: 'Oracle of Chaos',
-    description: 'The Luck God\'s blessing of unpredictability',
+    name: '混乱神谕',
+    description: '混乱神谕，增加不确定性',
     deity: 'luckgod',
     minFloor: 1,
     maxFloor: 5,
     blessings: [
       {
-        name: 'Chaotic Energy',
-        description: 'After playing a card, 30% chance to gain 1 energy.',
+        name: '混乱能量',
+        description: '每张牌后有30%几率获得1点能量',
         effect: 'randomEnergy',
         value: 30
       },
       {
-        name: 'Unpredictable Fate',
-        description: 'When you draw cards, 25% chance to draw an extra card.',
+        name: '不可预测的命运',
+        description: '当你抽牌时，有25%几率抽取额外1张牌',
         effect: 'randomDraw',
         value: 25
       }
@@ -172,27 +172,27 @@ export const oracles = [
       utility: 20
     },
     specialRules: [
-      'Card effects have a 10% chance to be enhanced.'
+      '卡牌效果有10%几率被增强'
     ]
   },
 
   // Death God Oracles
   {
-    name: 'Oracle of Sacrifice',
-    description: 'The Death God\'s blessing of exchange',
+    name: '牺牲神谕',
+    description: '死亡神谕，增加交换能力',
     deity: 'deathgod',
     minFloor: 1,
     maxFloor: 5,
     blessings: [
       {
-        name: 'Life Tap',
-        description: 'You can spend 2 health to gain 1 energy.',
+        name: '生命吸取',
+        description: '你可以花费2点生命值获得1点能量',
         effect: 'healthToEnergy',
         value: 2
       },
       {
-        name: 'Blood Magic',
-        description: 'Your attack cards deal 30% more damage but cost 1 health per play.',
+        name: '血魔法',
+        description: '你的攻击牌增加30%伤害，但每张牌消耗1点生命值',
         effect: 'bloodMagic',
         value: 30
       }
@@ -203,25 +203,25 @@ export const oracles = [
       utility: 10
     },
     specialRules: [
-      'When at less than 30% health, your attacks deal 50% more damage.'
+      '当生命值低于30%时，你的攻击增加50%伤害'
     ]
   },
   {
-    name: 'Oracle of Shadow',
-    description: 'The Death God\'s blessing of darkness',
+    name: '阴影神谕',
+    description: '阴影神谕，增加阴影能力',
     deity: 'deathgod',
     minFloor: 1,
     maxFloor: 5,
     blessings: [
       {
-        name: 'Shadow Form',
-        description: 'First attack against you each combat deals 50% less damage.',
+        name: '阴影形态',
+        description: '每次战斗中第一次攻击你时，造成50%伤害',
         effect: 'shadowForm',
         value: 50
       },
       {
-        name: 'Soul Drain',
-        description: 'When you defeat an enemy, heal 2 health.',
+        name: '灵魂吸取',
+        description: '当你击败敌人时，恢复2点生命值',
         effect: 'drainOnKill',
         value: 2
       }

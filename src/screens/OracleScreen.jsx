@@ -33,30 +33,30 @@ const OracleScreen = ({ character, onOracleSelect }) => {
   return (
     <div className="flex flex-col items-center">
       <h1 className="text-3xl font-bold mb-6 text-center text-amber-400">
-        Oracle Chamber
+        神谕大厅
       </h1>
       
       <p className="text-lg mb-8 text-center max-w-2xl text-gray-300">
-        The ancient oracle offers you their blessing before your next challenge.
-        Choose wisely, for each blessing carries both power and purpose.
+        古老的先知在挑战之前给予你祝福。
+        选择你的神谕，获得他们的祝福，战胜越来越强大的敌人，到达终点。
       </p>
       
       <div className="flex items-center justify-between w-full max-w-4xl mb-8">
         <div className="bg-gray-800 px-4 py-2 rounded-lg">
-          <span className="text-sm text-gray-400">Character</span>
+          <span className="text-sm text-gray-400">角色</span>
           <div className="flex items-center">
-            <span className="text-xl font-semibold">{character?.name || "Hero"}</span>
+            <span className="text-xl font-semibold">{character?.name || "英雄"}</span>
           </div>
         </div>
         
         <div className="bg-gray-800 px-4 py-2 rounded-lg">
-          <span className="text-sm text-gray-400">Floor</span>
+          <span className="text-sm text-gray-400">层数</span>
           <div className="text-xl font-semibold text-center">{floorNumber}</div>
         </div>
         
         <div className="bg-gray-800 px-4 py-2 rounded-lg">
-          <span className="text-sm text-gray-400">Next</span>
-          <div className="text-xl font-semibold text-center text-red-400">Battle</div>
+          <span className="text-sm text-gray-400">下一层</span>
+          <div className="text-xl font-semibold text-center text-red-400">挑战</div>
         </div>
       </div>
       
@@ -91,7 +91,7 @@ const OracleScreen = ({ character, onOracleSelect }) => {
               
               {oracle.specialRules && (
                 <div className="mt-2">
-                  <div className="text-sm font-semibold text-red-300 mb-1">Special Rules</div>
+                  <div className="text-sm font-semibold text-red-300 mb-1">特殊规则</div>
                   <ul className="text-sm text-gray-300">
                     {oracle.specialRules.map((rule, index) => (
                       <li key={index} className="mb-1">• {rule}</li>
@@ -101,7 +101,7 @@ const OracleScreen = ({ character, onOracleSelect }) => {
               )}
               
               <div className="mt-4 pt-3 border-t border-gray-700">
-                <div className="text-sm font-semibold text-gray-400 mb-1">Card Pool Modifiers</div>
+                <div className="text-sm font-semibold text-gray-400 mb-1">卡池修改器</div>
                 <div className="flex gap-3">
                   {Object.entries(oracle.cardPoolModifiers).map(([type, mod]) => (
                     <div
@@ -130,7 +130,7 @@ const OracleScreen = ({ character, onOracleSelect }) => {
         onClick={handleConfirm}
         disabled={!selectedOracle}
       >
-        Accept Blessing
+        接受祝福
       </button>
     </div>
   );

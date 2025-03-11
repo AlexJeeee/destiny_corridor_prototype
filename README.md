@@ -1,39 +1,65 @@
-# React + Vite Template
+# 命运回廊 (Destiny Corridor)
 
-A modern React template for web applications and games, featuring React 18, Vite, TailwindCSS, and Material UI.
+一款创新的2D卡牌Roguelike游戏，融合动态牌面系统、命运轮盘机制、空间战棋策略和动态叙事引擎等创新玩法。
 
-## Project Structure
+## 项目概述
+
+- **游戏类型**：2D卡牌Roguelike游戏
+- **开发语言**：React, JavaScript 和 Tailwind CSS
+- **平台**：PC优先，后续可扩展至移动端和主机平台
+
+## 游戏特点
+
+- **动态牌面系统**：每张卡牌具有正位和逆位两种形态，拥有不同但相关的效果
+- **命运轮盘机制**：影响游戏规则和卡池分布的神谕事件系统
+- **六边形战棋战场**：在六边形网格上进行战斗，地形效果与卡牌互动
+- **记忆回廊系统**：跨局游戏进度保存，死亡后保留部分能力
+- **动态叙事引擎**：基于玩家选择的分支剧情和事件链
+- **模组工坊体系**：允许玩家创建和分享自定义卡牌和规则
+- **赛季轮回机制**：定期更新内容和平衡调整，保持游戏新鲜度
+
+## 核心机制
+
+### 动态牌面系统
+- 卡牌可在正位和逆位之间转换，拥有不同效果
+- 移动轨迹影响卡牌基础数值，鼓励策略性移动
+
+### 命运轮盘机制
+- 神谕事件系统提供独特的祝福和游戏规则变化
+- 命运硬币作为稀有资源，可用于重置当前楼层、刷新商店等
+
+### 空间战棋融合
+- 六边形战场系统，多样化的地形效果
+- 卡牌站位联动，特殊阵型触发组合效果
+
+### 记忆回廊系统
+- 遗物记忆机制，死亡后保留部分能力
+- 进阶解锁条件，完成特定挑战解锁特殊卡组
+
+## 项目结构
 
 ```
 ├── src/
-│   ├── App.jsx          # Main application component
-│   ├── main.jsx         # Application entry point
-│   └── index.css        # Global styles (Tailwind)
-├── public/              # Static assets
-├── index.html           # HTML template
-├── vite.config.js       # Vite configuration
-├── tailwind.config.js   # Tailwind configuration
-├── postcss.config.js    # PostCSS configuration
-└── eslint.config.js     # ESLint configuration
+│   ├── App.jsx          # 主应用组件
+│   ├── main.jsx         # 应用入口点
+│   └── index.css        # 全局样式 (Tailwind)
+├── public/              # 静态资源
+├── index.html           # HTML模板
+├── vite.config.js       # Vite配置
+├── tailwind.config.js   # Tailwind配置
+├── postcss.config.js    # PostCSS配置
+└── eslint.config.js     # ESLint配置
 ```
 
-## Development Guidelines
+## 可用脚本
+- `pnpm install` - 安装依赖
+- `pnpm run dev` - 启动开发服务器
+- `pnpm run lint` - 代码检查
 
-- Modify `index.html` and `src/App.jsx` as needed
-- Create new folders or files in `src/` directory as needed
-- Style components using TailwindCSS utility classes
-- Avoid modifying `src/main.jsx` and `src/index.css`
-- Only modify `vite.config.js` if absolutely necessary
-
-## Available Scripts
-- `pnpm install` - Install dependencies
-- `pnpm run dev` - Start development server
-- `pnpm run lint` - Lint source files
-
-## Tech Stack
+## 技术栈
 
 - React
 - Vite
 - TailwindCSS
 - ESLint
-- Javascript
+- JavaScript

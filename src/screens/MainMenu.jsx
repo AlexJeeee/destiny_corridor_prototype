@@ -21,19 +21,18 @@ const MainMenu = ({ onCharacterSelect }) => {
   return (
     <div className="flex flex-col items-center">
       <h1 className="text-4xl font-bold mb-8 text-center text-amber-400">
-        Destiny Corridor
+        命运回廊
       </h1>
       
       <div className="mb-12 max-w-2xl text-center">
         <p className="text-lg text-gray-300">
-          Navigate the treacherous Destiny Corridor, harnessing the power of fate itself.
-          Choose your character, earn the blessings of Oracles, and battle through
-          increasingly challenging floors to reach the end.
+          穿越命运回廊，掌握命运的力量。
+          选择你的角色，获得神谕的祝福，战胜越来越强大的敌人，到达终点。
         </p>
       </div>
       
       <h2 className="text-2xl font-semibold mb-6 text-center">
-        Choose Your Character
+        选择你的角色
       </h2>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
@@ -66,17 +65,17 @@ const MainMenu = ({ onCharacterSelect }) => {
               
               <div className="grid grid-cols-2 gap-2 mt-2">
                 <div className="flex flex-col items-center text-center">
-                  <span className="text-xs text-gray-400">Health</span>
+                  <span className="text-xs text-gray-400">生命</span>
                   <span className="text-lg font-semibold text-red-400">{character.maxHealth}</span>
                 </div>
                 <div className="flex flex-col items-center text-center">
-                  <span className="text-xs text-gray-400">Energy</span>
+                  <span className="text-xs text-gray-400">能量</span>
                   <span className="text-lg font-semibold text-blue-400">{character.maxEnergy}</span>
                 </div>
               </div>
               
               <div className="mt-4">
-                <span className="text-xs text-gray-400 block text-center">Starting Deck</span>
+                <span className="text-xs text-gray-400 block text-center">起始卡组</span>
                 <span className="text-sm font-medium text-center block capitalize">
                   {character.startingDeckType}
                 </span>
@@ -84,7 +83,7 @@ const MainMenu = ({ onCharacterSelect }) => {
               
               {character.abilities && character.abilities.length > 0 && (
                 <div className="mt-4 w-full">
-                  <span className="text-xs text-gray-400 block text-center">Ability</span>
+                  <span className="text-xs text-gray-400 block text-center">能力</span>
                   <span className="text-sm font-medium text-amber-300 block text-center">
                     {character.abilities[0].name}
                   </span>
@@ -108,13 +107,13 @@ const MainMenu = ({ onCharacterSelect }) => {
         onClick={handleStartGame}
         disabled={!selectedCharacterId}
       >
-        Begin Journey
+        开始旅程
       </button>
       
       {/* Display sample cards for the selected character */}
       {selectedCharacterId && (
         <div className="mt-10">
-          <h3 className="text-xl font-semibold mb-4 text-center">Special Cards</h3>
+          <h3 className="text-xl font-semibold mb-4 text-center">特殊卡牌</h3>
           <div className="flex flex-wrap justify-center gap-4">
             {characters
               .find(char => char.id === selectedCharacterId)

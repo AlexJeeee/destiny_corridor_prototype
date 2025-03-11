@@ -17,7 +17,8 @@ export const characters = [
         name: '战斗专精',
         description: '每次移动后，下一张攻击牌伤害+2'
       }
-    ]
+    ],
+    specialCards: ['rage']
   },
   {
     id: 'mage',
@@ -31,7 +32,8 @@ export const characters = [
         name: '元素亲和',
         description: '在元素地形上施放对应元素的法术时，消耗-1'
       }
-    ]
+    ],
+    specialCards: ['arcaneMissile']
   },
   {
     id: 'rogue',
@@ -45,7 +47,8 @@ export const characters = [
         name: '影袭',
         description: '每回合第一次移动不消耗行动点'
       }
-    ]
+    ],
+    specialCards: ['shadowStep']
   }
 ];
 

@@ -18,8 +18,20 @@ const BattleScreen = ({ character, onBattleComplete }) => {
   const logEndRef = useRef(null);
 
   // 添加游戏日志
-  const addGameLog = (text) => {
-    setGameLog(prev => [...prev, { text, timestamp: new Date().toLocaleTimeString() }]);
+  const addToBattleLog = (text) => {
+    // 检查是否已经有相同的日志（避免重复）
+    const isDuplicate = gameLog.some(log => 
+      log.text === text && 
+      Date.now() - new Date(log.timestamp).getTime() < 1000
+    );
+    
+    if (!isDuplicate) {
+      setGameLog(prev => [...prev, { 
+        text, 
+        timestamp: new Date().toLocaleTimeString(),
+        id: Date.now() + Math.random().toString(36).substring(2, 9)
+      }]);
+    }
   };
 
   // 滚动日志到底部
@@ -47,101 +59,188 @@ const BattleScreen = ({ character, onBattleComplete }) => {
         newState.player.hand = [];
       }
       
+      // 检查敌人是否存在
+      if (!Array.isArray(newState.enemies)) {
+        console.error('敌人不是数组');
+        // 修复敌人
+        newState.enemies = [];
+      }
+      
+      // 检查敌人位置
+      if (newState.enemies && newState.enemies.length > 0) {
+        console.log('敌人位置检查:');
+        newState.enemies.forEach((enemy, index) => {
+          console.log(`敌人${index}:`, enemy);
+          if (!enemy.position) {
+            console.error(`敌人${index}没有位置信息`);
+          }
+        });
+      }
+      
       // 检查玩家生命值变化
       const prevHealth = gameState.player?.health;
       if (prevHealth !== undefined && newState.player && prevHealth > newState.player.health) {
         const damage = prevHealth - newState.player.health;
-        addGameLog(`玩家受到了${damage}点伤害！`);
+        addToBattleLog(`玩家受到了${damage}点伤害！`);
       }
       
       // 检查敌人数量变化
       const prevEnemiesCount = gameState.enemies?.length || 0;
       if (prevEnemiesCount > 0 && newState.enemies && prevEnemiesCount > newState.enemies.length) {
-        addGameLog(`一个敌人被击败了！`);
+        addToBattleLog(`一个敌人被击败了！`);
       }
       
       // 检查回合变化
       if (gameState.currentTurn !== newState.currentTurn) {
         if (newState.currentTurn === 'player') {
-          addGameLog(`玩家回合开始`);
+          addToBattleLog(`玩家回合开始`);
         } else {
-          addGameLog(`敌人回合开始`);
+          addToBattleLog(`敌人回合开始`);
         }
       }
       
       setGameState(newState);
     };
-
-    // 监听游戏事件
-    const handleGameEvent = (event) => {
-      console.log('收到游戏事件:', event);
-      
-      // 从event.detail中获取事件数据
-      const eventData = event.detail || event;
-      
-      // 使用事件ID避免重复处理相同的事件
-      const eventId = eventData.id || `${eventData.type}-${Date.now()}`;
-      
-      // 检查是否已经处理过这个事件
-      if (gameLog.some(log => log.eventId === eventId)) {
-        console.log('事件已处理，跳过:', eventId);
-        return;
-      }
-      
-      let logText = '';
-      
-      if (eventData.type === 'enemy_attack') {
-        logText = `敌人攻击了玩家，造成${eventData.damage}点伤害！`;
-      } else if (eventData.type === 'enemy_move') {
-        logText = `敌人移动到了(${eventData.position.x}, ${eventData.position.y})`;
-      } else if (eventData.type === 'player_move') {
-        logText = `玩家移动到了(${eventData.position.x}, ${eventData.position.y})`;
-      } else if (eventData.type === 'card_effect') {
-        logText = `${eventData.cardName}生效：${eventData.effect}`;
-      } else if (eventData.type === 'enemy_defeated') {
-        logText = `${eventData.count || 1}个敌人被击败了！`;
-      } else if (eventData.type === 'player_defeated') {
-        logText = `玩家被击败了！游戏结束`;
-      }
-      
-      if (logText) {
-        setGameLog(prev => [...prev, { 
-          text: logText, 
-          timestamp: new Date().toLocaleTimeString(),
-          eventId
-        }]);
-      }
-    };
-
-    // 添加自定义事件监听
-    window.addEventListener('game_event', handleGameEvent);
-
+    
+    // 订阅游戏状态更新
     gameManager.subscribe(handleStateUpdate);
     
-    // 初始化战场
-    if (character) {
-      // 设置玩家初始位置
+    // 订阅游戏事件 - 通过事件总线
+    const handleGameEventCallback = (event) => {
+      console.log('BattleScreen收到游戏事件(事件总线):', event);
+      handleGameEvent(event);
+    };
+    
+    // 使用事件总线订阅游戏事件
+    gameManager.eventBus.on('gameEvent', handleGameEventCallback);
+    
+    // 订阅游戏事件 - 通过window事件
+    const handleWindowGameEvent = (e) => {
+      console.log('BattleScreen收到游戏事件(window):', e.detail);
+      handleGameEvent(e.detail);
+    };
+    
+    // 添加window事件监听
+    window.addEventListener('game_event', handleWindowGameEvent);
+    
+    // 初始化战斗
+    if (!gameState.battleInitialized) {
+      console.log('初始化战斗');
+      
+      // 设置战斗初始化标志
       gameManager.setState({
-        ...gameManager.getState(),
-        player: {
-          ...gameManager.getState().player,
-          name: character.name,
-          maxHealth: character.maxHealth,
-          health: character.maxHealth,
-          maxEnergy: character.maxEnergy,
-          energy: character.maxEnergy
-        }
+        ...gameState,
+        battleInitialized: true
       });
       
-      addGameLog('战斗开始！');
+      addToBattleLog('战斗开始！');
     }
-
+    
     // 清理函数
     return () => {
+      // 取消订阅状态更新
       gameManager.unsubscribe(handleStateUpdate);
-      window.removeEventListener('game_event', handleGameEvent);
+      
+      // 取消订阅游戏事件
+      gameManager.eventBus.off('gameEvent', handleGameEventCallback);
+      
+      // 移除window事件监听
+      window.removeEventListener('game_event', handleWindowGameEvent);
     };
-  }, [gameManager, character]);
+  }, []);
+
+  // 处理游戏事件
+  const handleGameEvent = (event) => {
+    console.log('处理游戏事件:', event);
+    
+    if (!event || !event.type) {
+      console.error('无效的游戏事件:', event);
+      return;
+    }
+    
+    // 根据事件类型处理
+    switch (event.type) {
+      case 'player_turn_start':
+      case 'turn_start':
+        if (event.turn === 'player') {
+          addToBattleLog('你的回合开始了');
+        }
+        break;
+        
+      case 'enemy_turn_start':
+      case 'turn_start':
+        if (event.turn === 'enemy') {
+          addToBattleLog('敌人的回合开始了');
+        }
+        break;
+        
+      case 'player_turn_end':
+      case 'turn_end':
+        if (event.turn === 'player') {
+          addToBattleLog('你的回合结束了');
+        }
+        break;
+        
+      case 'enemy_turn_end':
+      case 'turn_end':
+        if (event.turn === 'enemy') {
+          addToBattleLog('敌人的回合结束了');
+        }
+        break;
+        
+      case 'card_played':
+        if (event.card) {
+          addToBattleLog(`你使用了卡牌: ${event.card.name}`);
+        }
+        break;
+        
+      case 'enemy_damaged':
+        if (event.enemy && event.damage) {
+          const positionText = event.enemy.position ? `在位置(${event.enemy.position.x}, ${event.enemy.position.y})的` : '';
+          addToBattleLog(`${positionText}敌人受到了 ${event.damage} 点伤害，剩余生命: ${event.enemy.health}`);
+        }
+        break;
+        
+      case 'player_damaged':
+        if (event.damage) {
+          addToBattleLog(`你受到了 ${event.damage} 点伤害，剩余生命: ${gameState.player.health}`);
+        }
+        break;
+        
+      case 'enemy_defeated':
+        if (event.enemy && event.enemy.position) {
+          addToBattleLog(`位置(${event.enemy.position.x}, ${event.enemy.position.y})的敌人被击败了！`);
+        } else if (event.count) {
+          addToBattleLog(`${event.count}个敌人被击败了！`);
+        } else {
+          addToBattleLog('一个敌人被击败了！');
+        }
+        break;
+        
+      case 'all_enemies_defeated':
+        addToBattleLog('所有敌人都被击败了！你赢了！');
+        // 延迟调用胜利处理，避免状态更新冲突
+        setTimeout(() => {
+          handleVictory();
+        }, 500);
+        break;
+        
+      case 'enemy_move':
+        if (event.position && event.oldPosition) {
+          addToBattleLog(`敌人从(${event.oldPosition.x}, ${event.oldPosition.y})移动到了(${event.position.x}, ${event.position.y})`);
+        }
+        break;
+        
+      case 'enemy_attack':
+        if (event.damage) {
+          addToBattleLog(`敌人攻击了你，造成 ${event.damage} 点伤害`);
+        }
+        break;
+        
+      default:
+        console.log('未处理的游戏事件类型:', event.type);
+    }
+  };
 
   // 处理格子点击
   const handleCellClick = (x, y) => {
@@ -306,7 +405,17 @@ const BattleScreen = ({ character, onBattleComplete }) => {
 
   // 处理胜利
   const handleVictory = () => {
+    console.log('处理胜利');
+    
+    // 标记战斗已结束
+    gameManager.setState({
+      ...gameState,
+      battleEnded: true
+    });
+    
     setMessage('战斗胜利！');
+    
+    // 显示祝福选择器
     setTimeout(() => {
       setIsBlessingSelectorOpen(true);
     }, 1500);
@@ -316,26 +425,40 @@ const BattleScreen = ({ character, onBattleComplete }) => {
   const checkBattleEnd = () => {
     // 使用局部变量记录战斗是否已经结束，避免重复处理
     if (gameState.battleEnded) {
+      console.log('战斗已经结束，跳过检查');
       return false;
     }
     
+    console.log('检查战斗是否结束，敌人数量:', gameState.enemies.length);
+    console.log('敌人状态:', gameState.enemies);
+    
     // 检查所有敌人是否已经死亡
-    if (gameState.enemies.length === 0 || gameState.enemies.every(enemy => enemy.health <= 0)) {
-      // 标记战斗已结束
-      gameManager.setState({
-        ...gameState,
-        battleEnded: true
+    if (gameState.enemies.length === 0 || gameState.enemies.every(enemy => !enemy || enemy.health <= 0)) {
+      console.log('所有敌人已经死亡，战斗结束');
+      
+      // 清理敌人数组，移除所有死亡的敌人
+      const aliveEnemies = gameState.enemies.filter(enemy => enemy && enemy.health > 0);
+      
+      // 如果还有敌人数组但都是死亡状态，更新状态
+      if (gameState.enemies.length > 0 && aliveEnemies.length === 0) {
+        gameManager.setState({
+          ...gameState,
+          enemies: []
+        });
+      }
+      
+      // 触发所有敌人被击败事件
+      gameManager.triggerGameEvent({
+        type: 'all_enemies_defeated'
       });
       
-      // 延迟调用胜利处理，避免状态更新冲突
-      setTimeout(() => {
-        handleVictory();
-      }, 500);
       return true;
     }
     
     // 检查玩家是否死亡
     if (gameState.player.health <= 0) {
+      console.log('玩家已经死亡，战斗结束');
+      
       // 标记战斗已结束
       gameManager.setState({
         ...gameState,

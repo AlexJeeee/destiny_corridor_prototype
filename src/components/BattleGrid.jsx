@@ -26,8 +26,15 @@ const BattleGrid = ({ onCellClick, player, enemies, selectedCard, targetingMode,
   const cols = 7;
   const currentTurn = gameState?.currentTurn || 'player';
 
+  // 添加调试信息
+  useEffect(() => {
+    console.log('BattleGrid渲染 - 玩家位置:', player?.position);
+    console.log('BattleGrid渲染 - 敌人列表:', enemies);
+  }, [player, enemies]);
+
   // 处理单元格点击
   const handleCellClick = (x, y) => {
+    console.log('单元格点击:', x, y);
     if (onCellClick) {
       onCellClick(x, y);
     }
@@ -131,8 +138,9 @@ const BattleGrid = ({ onCellClick, player, enemies, selectedCard, targetingMode,
     }
 
     // 检查敌人
-    const enemy = enemies.find(e => e.position.x === x && e.position.y === y);
+    const enemy = enemies.find(e => e.position && e.position.x === x && e.position.y === y);
     if (enemy) {
+      console.log(`找到敌人在位置(${x}, ${y}):`, enemy);
       return {
         occupant: {
           type: 'enemy',
@@ -169,6 +177,7 @@ const BattleGrid = ({ onCellClick, player, enemies, selectedCard, targetingMode,
           <HexCell
             key={`cell-${x}-${y}`}
             cell={cell}
+            position={{ x, y }}
             onClick={() => handleCellClick(x, y)}
             inRange={inRange}
             isSelected={isSelected}

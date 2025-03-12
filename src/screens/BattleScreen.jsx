@@ -3,7 +3,7 @@ import BattleGrid from '../components/BattleGrid';
 import Card from '../components/Card';
 import CharacterStats from '../components/CharacterStats';
 import BlessingSelector from '../components/BlessingSelector';
-import GameManager from '../core/GameManager';
+import GameManager from '../core/game-manage/GameManager';
 import { hexDistance } from '../utils/hexUtils';
 
 const BattleScreen = ({ character, onBattleComplete }) => {
@@ -13,7 +13,6 @@ const BattleScreen = ({ character, onBattleComplete }) => {
   const [isCardFlipped, setIsCardFlipped] = useState(false);
   const [message, setMessage] = useState("选择一张卡牌使用");
   const [targetingMode, setTargetingMode] = useState(false);
-  const [isBlessingSelectorOpen, setIsBlessingSelectorOpen] = useState(false);
   const [gameLog, setGameLog] = useState([]);
   const logEndRef = useRef(null);
 
@@ -160,32 +159,12 @@ const BattleScreen = ({ character, onBattleComplete }) => {
     
     // 根据事件类型处理
     switch (event.type) {
-      case 'player_turn_start':
       case 'turn_start':
-        if (event.turn === 'player') {
-          addToBattleLog('你的回合开始了');
-        }
+        addToBattleLog(`${character.name}的回合开始了`);
         break;
         
-      case 'enemy_turn_start':
-      case 'turn_start':
-        if (event.turn === 'enemy') {
-          addToBattleLog('敌人的回合开始了');
-        }
-        break;
-        
-      case 'player_turn_end':
       case 'turn_end':
-        if (event.turn === 'player') {
-          addToBattleLog('你的回合结束了');
-        }
-        break;
-        
-      case 'enemy_turn_end':
-      case 'turn_end':
-        if (event.turn === 'enemy') {
-          addToBattleLog('敌人的回合结束了');
-        }
+        addToBattleLog(`${character.name}的回合结束了`);
         break;
         
       case 'card_played':
@@ -197,13 +176,13 @@ const BattleScreen = ({ character, onBattleComplete }) => {
       case 'enemy_damaged':
         if (event.enemy && event.damage) {
           const positionText = event.enemy.position ? `在位置(${event.enemy.position.x}, ${event.enemy.position.y})的` : '';
-          addToBattleLog(`${positionText}敌人受到了 ${event.damage} 点伤害，剩余生命: ${event.enemy.health}`);
+          addToBattleLog(`${positionText}敌人受到了 ${event.damage} 点伤害`);
         }
         break;
         
       case 'player_damaged':
         if (event.damage) {
-          addToBattleLog(`你受到了 ${event.damage} 点伤害，剩余生命: ${gameState.player.health}`);
+          addToBattleLog(`你受到了 ${event.damage} 点伤害`);
         }
         break;
         
@@ -234,6 +213,12 @@ const BattleScreen = ({ character, onBattleComplete }) => {
       case 'enemy_attack':
         if (event.damage) {
           addToBattleLog(`敌人攻击了你，造成 ${event.damage} 点伤害`);
+        }
+        break;
+        
+      case 'card_effect':
+        if (event.cardName && event.effect) {
+          addToBattleLog(`你使用了卡牌 ${event.cardName}，${event.effect}`);
         }
         break;
         
@@ -417,7 +402,7 @@ const BattleScreen = ({ character, onBattleComplete }) => {
     
     // 显示祝福选择器
     setTimeout(() => {
-      setIsBlessingSelectorOpen(true);
+      onBattleComplete(true)
     }, 1500);
   };
 
